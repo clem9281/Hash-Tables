@@ -15,6 +15,27 @@ class LinkedPair:
         if self.next:
             next = self.next.key
         return f"{{key: {self.key}, value: {self.value}, next_key: {next}}}"
+    
+    # These little helpers keep our hash methods clean
+    
+    # append an item at the end of our linked pair chain. if the item exists overwrite it
+    def append(self, key, value):
+        if self.key == key:
+            self.value = value
+        elif not self.next:
+            self.next = LinkedPair(key, value)
+        else:
+            self.next.append(key, value)
+    
+    # retrieve an item from our linked list chain
+    def retrieve(self, key):
+        if self.key == key:
+            return self.value
+        elif not self.next:
+            print(f"Hash[{key}] is undefined")
+            return None
+        else:
+            return self.next.retrieve(key)
         
 class HashTable:
     '''
@@ -24,7 +45,6 @@ class HashTable:
     def __init__(self, capacity):
         self.capacity = capacity  # Number of buckets in the hash table
         self.storage = [None] * capacity
-        # self.count = 0
     
     def __str__(self):
         # This helped me to see the structure we are making, it prints our hash table as an dictionary with each index as it's key, and as the value either None or the 'linked list' as an array
@@ -82,32 +102,15 @@ class HashTable:
         Fill this in.
         '''
         # if there are no "None"s in our array we have reached capacity
-        # double the hash capacity
         if not None in self.storage:
-            print(f'FILLED UP HERE: {self}')
             self.resize()
         hash_mod = self._hash_mod(key)
-        # if we have something at the hash_mod index
+        # if we have something at the hash_mod index, append this value. Using LinkedPair.append will overwrite a value if that value already exists, and traverse over all the values
         if self.storage[hash_mod]:
-            # iterate over the linked pairs
-            current_node = self.storage[hash_mod]
-            while current_node:
-                # if any of these nodes already has the provided key, overwrite the value there, and break
-                if current_node.key == key:
-                    current_node.value = value
-                    break
-                # if the current node does not have a next it is the last one, add the new key value and break
-                if not current_node.next:
-                    current_node.next = LinkedPair(key, value)
-                    break
-                
-                current_node = current_node.next
+            self.storage[hash_mod].append(key, value)
         else:
             self.storage[hash_mod] = LinkedPair(key, value)
         
-
-
-
     def remove(self, key):
         '''
         Remove the value stored with the given key.
@@ -117,21 +120,28 @@ class HashTable:
         Fill this in.
         '''
         hash_mod = self._hash_mod(key)
-        if self.storage[hash_mod]:
-            current_node = self.storage[hash_mod]
-            prev_node = current_node
-            # if there is only one node at this index we just need to delete it
-            if not current_node.next:
-                self.storage[hash_mod] = None
-            # otherwise traverse the list, when we find the node with the key we want we will set the next of the node before it to the current node's next, whether that is another node or None is fine
-            else:
-                while current_node:
-                    if current_node.key == key:
-                        prev_node.next = current_node.next
-                    prev_node = current_node
-                    current_node = current_node.next
-        else:
+        # if there is nothing at our index, print our little error message and get out of there!
+        if not self.storage[hash_mod]:
             print(f'Hash[{key}] cannot be deleted: it does not exist')
+            return
+        # otherwise take a look at the first node at that index
+        current_node = self.storage[hash_mod]
+        prev_node = None
+        # if there is only one node at this index and it has the key we want we just need to delete it, make the value at this index None
+        if current_node.key == key and not current_node.next:
+            self.storage[hash_mod] = None
+        # else if this is the node we want and it's the first node, set the value at this index to point to the next node in the list
+        elif current_node.key == key:
+            self.storage[hash_mod] = self.storage[hash_mod].next
+        # otherwise traverse the list and delete the node if we find it
+        else:
+            while current_node:
+                if current_node.key == key:
+                    prev_node.next = current_node.next
+                    return
+                prev_node = current_node
+                current_node = current_node.next
+        
 
     def retrieve(self, key):
         '''
@@ -143,13 +153,10 @@ class HashTable:
         '''
         hash_mod = self._hash_mod(key)
         if self.storage[hash_mod]:
-            current_node = self.storage[hash_mod]
-            while current_node:
-                if current_node.key == key:
-                    return current_node.value
-                current_node = current_node.next
-        print(f"Hash[{key}] is undefined")
-        return None
+            return self.storage[hash_mod].retrieve(key)
+        else:
+            print(f"Hash[{key}] is undefined")
+            return None
 
     def resize(self):
         '''
@@ -214,39 +221,40 @@ if __name__ == "__main__":
     ht.insert("key-7", "val-7")
     ht.insert("key-8", "val-8")
     ht.insert("key-9", "val-9")
-
+    # print(ht)
     # return_value = ht.retrieve("key-0")
-    # print(return_value , "val-0")
+    # print(return_value, "val-0")
     # return_value = ht.retrieve("key-1")
-    # print(return_value , "val-1")
+    # print(return_value, "val-1")
     # return_value = ht.retrieve("key-2")
-    # print(return_value , "val-2")
+    # print(return_value, "val-2")
     # return_value = ht.retrieve("key-3")
-    # print(return_value , "val-3")
+    # print(return_value, "val-3")
     # return_value = ht.retrieve("key-4")
-    # print(return_value , "val-4")
+    # print(return_value, "val-4")
     # return_value = ht.retrieve("key-5")
-    # print(return_value , "val-5")
+    # print(return_value, "val-5")
     # return_value = ht.retrieve("key-6")
-    # print(return_value , "val-6")
+    # print(return_value, "val-6")
     # return_value = ht.retrieve("key-7")
-    # print(return_value , "val-7")
+    # print(return_value, "val-7")
     # return_value = ht.retrieve("key-8")
-    # print(return_value , "val-8")
+    # print(return_value, "val-8")
     # return_value = ht.retrieve("key-9")
-    # print(return_value , "val-9")
+    # print(return_value, "val-9")
 
-    ht.remove("key-9")
-    ht.remove("key-8")
-    ht.remove("key-7")
-    ht.remove("key-6")
-    ht.remove("key-5")
-    ht.remove("key-4")
-    ht.remove("key-3")
-    ht.remove("key-2")
-    ht.remove("key-1")
+    # ht.remove("key-4")
+    # ht.remove("key-3")
+    # ht.remove("key-2")
+    # ht.remove("key-1")
+    # ht.remove("key-9")
+    # ht.remove("key-8")
+    # ht.remove("key-7")
+    # ht.remove("key-6")
+    # ht.remove("key-5")
+    
     ht.remove("key-0")
-
+    print(ht)
     return_value = ht.retrieve("key-0")
     print(return_value)
     # return_value = ht.retrieve("key-1")
